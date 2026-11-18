@@ -1,0 +1,24 @@
+name: elon-ping
+on:
+  schedule:
+    - cron: "*/5 2-15 * * *"   # every 5 min, 10:00-23:59 SGT
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: elon-ping
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 ping.py
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          ELON_PING_WEBHOOK_URL: ${{ secrets.ELON_PING_WEBHOOK_URL }}
+          ELON_PING_WEBHOOK_KEY: ${{ secrets.ELON_PING_WEBHOOK_KEY }}
+      - run: |
+          if [ -n "$(git status --porcelain since_id.txt)" ]; then
+            git config user.name "elon-ping-bot"; git config user.email "actions@users.noreply.github.com"
+            git add since_id.txt && git commit -qm "update since_id" && git push -q
+          fi
